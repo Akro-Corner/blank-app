@@ -49,7 +49,15 @@ Python
 
 import streamlit as st
 
-# --- 2. Header and Stats ---
+This is a SyntaxError, which means there is a typo in the Python code—likely a stray backslash \ or an indentation issue from the last copy-paste. Python can't even "read" the file, so it crashes before it even tries to talk to the database.
+
+Here is the clean, fixed code block. I have removed the line-continuation backslashes to make it as "clean" as possible for Python to read.
+The Final Code
+Python
+
+import streamlit as st
+
+# 2. Header and Stats
 st.title("Pedidos Actuales")
 
 # Fetch data from 'todos' table
@@ -67,7 +75,7 @@ if todos_data:
     
     st.divider()
 
-    # --- 3. The List of Packages ---
+    # 3. The List of Packages
     for todo in todos_data:
         with st.container(border=True):
             c1, c2, c3 = st.columns([3, 2, 1])
@@ -81,31 +89,25 @@ if todos_data:
                 st.write(f"{todo['email']}")
             
             with c3:
-                # Logic to determine if currently marked as done
-                is_currently_done = (todo['estado'] == 'completado')
+                # Check current state
+                is_done = (todo['estado'] == 'completado')
                 
                 status_checkbox = st.checkbox(
                     "Completado", 
-                    value=is_currently_done, 
+                    value=is_done, 
                     key=f"check_{todo['id']}"
                 )
                 
-                # If the user toggles the checkbox
-                if status_checkbox != is_currently_done:
-                    new_status = 'completado' if status_checkbox else 'presupuesto'
+                # Logic for update
+                if status_checkbox != is_done:
+                    new_val = 'completado' if status_checkbox else 'presupuesto'
                     
                     try:
-                        # THE FIX: Use .filter() with a string-casted ID
-                        # This avoids the 'uuid = integer' conflict by 
-                        # forcing the comparison to happen as strings.
-                        supabase.table("todos") \
-                            .update({"estado": new_status}) \
-                            .filter("id", "eq", str(todo["id"])) \
-                            .execute()
-                        
+                        # Fixed: No backslashes to avoid SyntaxErrors
+                        supabase.table("todos").update({"estado": new_val}).filter("id", "eq", str(todo["id"])).execute()
                         st.rerun()
                     except Exception as e:
-                        st.error(f"Error updating database: {e}")
+                        st.error(f"Error: {e}")
 
 else:
     st.info("No hay pedidos registrados en la base de datos.")
