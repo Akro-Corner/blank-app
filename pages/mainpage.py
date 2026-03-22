@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from supabase import create_client
 
-if not "logged_user" in st.session_state("logged_user"):
+if not "logged_user" in st.session_state:
     st.switch_page("streamlit_app")
     st.error("Session expired!")
 
