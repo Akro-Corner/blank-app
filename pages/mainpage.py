@@ -34,9 +34,6 @@ url = st.secrets["SUPABASE_URL"]
 key = st.secrets["SUPABASE_KEY"]
 supabase = create_client(url, key)
 
-import streamlit as st
-from supabase import create_client
-
 # 1. Setup Connection
 url = st.secrets["SUPABASE_URL"]
 key = st.secrets["SUPABASE_KEY"]
@@ -54,6 +51,7 @@ todos_data = response.data
 if todos_data:
     # Quick Summary Metrics
     total_pkgs = len(todos_data)
+    # Using 'completado' as the source of truth for logic
     pending = len([t for t in todos_data if t['estado'] != 'completado'])
     
     col_a, col_b = st.columns(2)
@@ -77,18 +75,31 @@ if todos_data:
                 st.write(f"{todo['email']}")
             
             with c3:
-                # Checkbox logic: If 'estado' is 'entregado', checkbox is checked
-                is_delivered = st.checkbox(
+                # Checkbox logic
+                is_checked = (todo['estado'] == 'completado')
+                
+                status_checkbox = st.checkbox(
                     "Completado", 
-                    value=(todo['estado'] == 'completado'), 
+                    value=is_checked, 
                     key=f"check_{todo['id']}"
                 )
                 
-                # If user clicks the checkbox, update the database
-                if is_delivered != (todo['estado'] == 'completado'):
-                    new_val = 'entregado' if is_delivered else 'presupuesto'
-                    supabase.table("todos").update({"estado": new_val}).eq("id", todo["id"]).execute()
-                    st.rerun()
+                # If the checkbox state differs from the database state
+                if status_checkbox != is_checked:
+                    # Determine new string based on checkbox
+                    new_val = 'completado' if status_checkbox else 'presupuesto'
+                    
+                    # FIX: Explicitly cast todo["id"] to int to prevent the 'operator does not exist' error
+                    try:
+                        supabase.table("todos") \
+                            .update({"estado": new_val}) \
+                            .eq("id", int(todo["id"])) \
+                            .execute()
+                        
+                        # Refresh the UI to show updated metrics
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error updating database: {e}")
 
 else:
     st.info("No hay pedidos registrados en la base de datos.")
