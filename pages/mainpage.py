@@ -83,7 +83,22 @@ if todos_data:
                     value=is_checked, 
                     key=f"check_{todo['id']}"
                 )
-                
+        if status_checkbox != is_checked:
+            new_val = 'completado' if status_checkbox else 'presupuesto'
+                    
+            try:
+                # We use .eq("id", str(todo["id"])) but also make sure 
+                # the table name and column names are exactly right.
+                supabase.table("todos") \
+                    .update({"estado": new_val}) \
+                    .eq("id", str(todo["id"])) \
+                    .execute()
+                        
+                st.rerun()
+            except Exception as e:
+                # This will print the full error to your Streamlit screen
+                st.error(f"Error updating database: {e}")       
+        
                 # If the checkbox state differs from the database state
                 if status_checkbox != is_checked:
                     # Determine new string based on checkbox
