@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from supabase import create_client
+import supabase
 
 st.markdown(
     """
@@ -29,60 +30,39 @@ SUPABASE_KEY = st.secrets.get("SUPABASE_KEY")
 todos = 1
 
 #-------------------------
+url = st.secrets["SUPABASE_URL"]
+key = st.secrets["SUPABASE_KEY"]
+supabase = create_client(url, key)
 
-def init_lcl_connect():
-    url = SUPABASE_URL
-    key = SUPABASE_KEY
-    return create_client(url, key)
+st.badge("Actualizando...", color="blue", icon="☁")
+st.subheader("Pedidos Actuales")
 
-sb = init_lcl_connect()
+# 2. Fetch data from the "todos" table
+# We use select("*") to get the ID, task_name, and is_completed status
+response = supabase.table("todos").select("*").execute()
+todos_data = response.data
 
-@st.cache_data(ttl=600)
-def retrieve_data():
-    response = sb.table("todos").select("*").execute()
-    todos = response.data
-    return pd.DataFrame(response.data)
-    
-
-#-------------------------
-
-st.header("DataSuite - " + st.session_state["logged_user"])
-st.divider()
-
-st.badge("Tiempo Real", color="green", icon="☁")
-st.subheader("Pedidos Actuales.")
-
-df = retrieve_data()
-
-
-
-for todo in todos:
-    col1, col2 = st.columns([3, 1])
-    
-    with col1:
-        st.write(todo["task_name"])
-    
-    with col2:
-        # 2. When this checkbox is clicked, it triggers an UPDATE
-        checked = st.checkbox("Done", value=todo["is_completed"], key=todo["id"])
+if todos_data:
+    for todo in todos_data:
+        # Create a layout with two columns
+        col1, col2 = st.columns([4, 1])
         
-        if checked != todo["is_completed"]:
-            supabase.table("todos") \
-                .update({"is_completed": checked}) \
-                .eq("id", todo["id"]) \
-                .execute()
-            st.rerun()
-
-if "created_at" in df.columns:
-    df["created_at"] = pd.to_datetime(df["created_at"])
-    df = df.set_index("created_at")
-
-    st.subheader("Data Overview")
-    st.write(df.head())
-
-    st.subheader("Visualized Data")
-    st.line_chart(df[["value_column_name"]]) 
+        with col1:
+            st.write(f"**{todo['task_name']}**")
+            
+        with col2:
+            # 3. This checkbox triggers the SQL Update
+            # The 'key' must be unique, so we use the database ID
+            is_done = st.checkbox("Done", value=todo["is_completed"], key=str(todo["id"]))
+            
+            # 4. Only send update to Supabase if the value actually changed
+            if is_done != todo["is_completed"]:
+                supabase.table("todos") \
+                    .update({"is_completed": is_done}) \
+                    .eq("id", todo["id"]) \
+                    .execute()
+                
+                # Refresh the UI to show the new state
+                st.rerun()
 else:
-    st.info("No data found in Supabase.")
-
-
+    st.info("No tasks found in the 'todos' table.")
