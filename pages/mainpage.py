@@ -37,7 +37,7 @@ def init_lcl_connect():
 sb = init_lcl_connect()
 
 def retrieve_data():
-    response = sb.table("todos").select("*").execute()
+    response = sb.table("pedidos").select("*").execute()
     return pd.DataFrame(response.data)
 
 #-------------------------
