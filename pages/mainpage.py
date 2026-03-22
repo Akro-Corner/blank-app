@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from supabase import create_client, Client
+from supabase import create_client
 
 if not "logged_user" in st.session_state("logged_user"):
     st.switch_page("streamlit_app")
