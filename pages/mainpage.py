@@ -2,6 +2,22 @@ import streamlit as st
 import pandas as pd
 from supabase import create_client
 
+st.markdown(
+    """
+    <style>
+        /* This hides the sidebar itself */
+        [data-testid="stSidebar"] {
+            display: none;
+        }
+        /* This hides the ' > ' arrow button that lets users open it */
+        [data-testid="stSidebarCollapsedControl"] {
+            display: none;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 if not "logged_user" in st.session_state:
     st.switch_page("streamlit_app.py")
     st.error("Session expired!")
@@ -31,5 +47,19 @@ st.divider()
 
 st.badge("Tiempo Real", color="green", icon="☁")
 st.subheader("Pedidos Actuales.")
+
+df = retrieve_data()
+
+if "created_at" in df.columns:
+    df["created_at"] = pd.to_datetime(df["created_at"])
+    df = df.set_index("created_at")
+
+    st.subheader("Data Overview")
+    st.write(df.head())
+
+    st.subheader("Visualized Data")
+    st.line_chart(df[["value_column_name"]]) 
+else:
+    st.info("No data found in Supabase.")
 
 
