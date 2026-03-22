@@ -34,35 +34,61 @@ url = st.secrets["SUPABASE_URL"]
 key = st.secrets["SUPABASE_KEY"]
 supabase = create_client(url, key)
 
-st.badge("Actualizando...", color="blue", icon="☁")
-st.subheader("Pedidos Actuales")
+import streamlit as st
+from supabase import create_client
 
-# 2. Fetch data from the "todos" table
-# We use select("*") to get the ID, task_name, and is_completed status
+# 1. Setup Connection
+url = st.secrets["SUPABASE_URL"]
+key = st.secrets["SUPABASE_KEY"]
+supabase = create_client(url, key)
+
+st.set_page_config(page_title="Delivery Registry", layout="wide")
+
+# 2. Header and Stats
+st.title("Pedidos Actuales")
+
+# Fetch data from 'todos' table
 response = supabase.table("todos").select("*").execute()
 todos_data = response.data
 
 if todos_data:
+    # Quick Summary Metrics
+    total_pkgs = len(todos_data)
+    pending = len([t for t in todos_data if t['estado'] != 'completado'])
+    
+    col_a, col_b = st.columns(2)
+    col_a.metric("Total Packages", total_pkgs)
+    col_b.metric("Pending Delivery", pending, delta_color="inverse")
+    
+    st.divider()
+
+    # 3. The List of Packages
     for todo in todos_data:
-        # Create a layout with two columns
-        col1, col2 = st.columns([4, 1])
-        
-        with col1:
-            st.write(f"**{todo['task_name']}**")
+        # Create a visual card for each package
+        with st.container(border=True):
+            c1, c2, c3 = st.columns([3, 2, 1])
             
-        with col2:
-            # 3. This checkbox triggers the SQL Update
-            # The 'key' must be unique, so we use the database ID
-            is_done = st.checkbox("Done", value=todo["is_completed"], key=str(todo["id"]))
+            with c1:
+                st.write(f"**Pedidos:** {todo['pedido']}")
+                st.caption(f"ID: {todo['id']} | Fechas: {todo['fecha']}")
             
-            # 4. Only send update to Supabase if the value actually changed
-            if is_done != todo["is_completed"]:
-                supabase.table("todos") \
-                    .update({"is_completed": is_done}) \
-                    .eq("id", todo["id"]) \
-                    .execute()
+            with c2:
+                st.write(f"**Personas:** {todo['nombre'] or 'N/A'}")
+                st.write(f"{todo['email']}")
+            
+            with c3:
+                # Checkbox logic: If 'estado' is 'entregado', checkbox is checked
+                is_delivered = st.checkbox(
+                    "Completado", 
+                    value=(todo['estado'] == 'completado'), 
+                    key=f"check_{todo['id']}"
+                )
                 
-                # Refresh the UI to show the new state
-                st.rerun()
+                # If user clicks the checkbox, update the database
+                if is_delivered != (todo['estado'] == 'completado'):
+                    new_val = 'entregado' if is_delivered else 'presupuesto'
+                    supabase.table("todos").update({"estado": new_val}).eq("id", todo["id"]).execute()
+                    st.rerun()
+
 else:
-    st.info("No tasks found in the 'todos' table.")
+    st.info("No hay pedidos registrados en la base de datos.")
