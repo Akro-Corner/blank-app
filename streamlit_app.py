@@ -1,5 +1,21 @@
 import streamlit as st
 
+st.markdown(
+    """
+    <style>
+        /* This hides the sidebar itself */
+        [data-testid="stSidebar"] {
+            display: none;
+        }
+        /* This hides the ' > ' arrow button that lets users open it */
+        [data-testid="stSidebarCollapsedControl"] {
+            display: none;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 #-------------------------
 
 st.header("DataSuite - Login")
