@@ -26,6 +26,7 @@ if not "logged_user" in st.session_state:
 
 SUPABASE_URL = st.secrets.get("SUPABASE_URL")
 SUPABASE_KEY = st.secrets.get("SUPABASE_KEY")
+todos = 1
 
 #-------------------------
 
@@ -39,7 +40,9 @@ sb = init_lcl_connect()
 @st.cache_data(ttl=600)
 def retrieve_data():
     response = sb.table("todos").select("*").execute()
+    todos = response.data
     return pd.DataFrame(response.data)
+    
 
 #-------------------------
 
@@ -50,6 +53,25 @@ st.badge("Tiempo Real", color="green", icon="☁")
 st.subheader("Pedidos Actuales.")
 
 df = retrieve_data()
+
+
+
+for todo in todos:
+    col1, col2 = st.columns([3, 1])
+    
+    with col1:
+        st.write(todo["task_name"])
+    
+    with col2:
+        # 2. When this checkbox is clicked, it triggers an UPDATE
+        checked = st.checkbox("Done", value=todo["is_completed"], key=todo["id"])
+        
+        if checked != todo["is_completed"]:
+            supabase.table("todos") \
+                .update({"is_completed": checked}) \
+                .eq("id", todo["id"]) \
+                .execute()
+            st.rerun()
 
 if "created_at" in df.columns:
     df["created_at"] = pd.to_datetime(df["created_at"])
