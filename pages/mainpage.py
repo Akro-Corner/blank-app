@@ -26,7 +26,7 @@ def retrieve_data():
 
 #-------------------------
 
-st.header("DataSuite - " + st.session_state("logged_user"))
+st.header("DataSuite - " + st.session_state["logged_user"])
 st.divider()
 
 st.badge("Tiempo Real", color="green", icon="☁")
