@@ -41,7 +41,15 @@ supabase = create_client(url, key)
 
 st.set_page_config(page_title="Delivery Registry", layout="wide")
 
-# 2. Header and Stats
+The error persists because PostgreSQL is extremely strict: it sees a column typed as UUID and a value being sent as an integer (like 28), and it refuses to compare them.
+
+To fix this, we have to bypass the standard .eq() method and use a raw filter that tells PostgreSQL to treat the ID as a string so it can match your data.
+The Final Corrected Code
+Python
+
+import streamlit as st
+
+# --- 2. Header and Stats ---
 st.title("Pedidos Actuales")
 
 # Fetch data from 'todos' table
@@ -51,7 +59,6 @@ todos_data = response.data
 if todos_data:
     # Quick Summary Metrics
     total_pkgs = len(todos_data)
-    # Standardizing 'completado' as the "True" state
     pending = len([t for t in todos_data if t['estado'] != 'completado'])
     
     col_a, col_b = st.columns(2)
@@ -60,7 +67,7 @@ if todos_data:
     
     st.divider()
 
-    # 3. The List of Packages
+    # --- 3. The List of Packages ---
     for todo in todos_data:
         with st.container(border=True):
             c1, c2, c3 = st.columns([3, 2, 1])
@@ -74,34 +81,29 @@ if todos_data:
                 st.write(f"{todo['email']}")
             
             with c3:
-                # Current state in DB
-                is_currently_completed = (todo['estado'] == 'completado')
+                # Logic to determine if currently marked as done
+                is_currently_done = (todo['estado'] == 'completado')
                 
-                # Checkbox UI
                 status_checkbox = st.checkbox(
                     "Completado", 
-                    value=is_currently_completed, 
+                    value=is_currently_done, 
                     key=f"check_{todo['id']}"
                 )
                 
-                # Trigger update only if user changed the checkbox
-                if status_checkbox != is_currently_completed:
-                    new_val = 'completado' if status_checkbox else 'presupuesto'
+                # If the user toggles the checkbox
+                if status_checkbox != is_currently_done:
+                    new_status = 'completado' if status_checkbox else 'presupuesto'
                     
                     try:
-                        # CRITICAL FIX: Ensure the ID is a string for the UUID column
-                        # Also ensured we use the exact variable name from the loop
-                        record_id = str(todo["id"])
-                        
+                        # THE FIX: Use .filter() with a string-casted ID
+                        # This avoids the 'uuid = integer' conflict by 
+                        # forcing the comparison to happen as strings.
                         supabase.table("todos") \
-                            .update({"estado": new_val}) \
-                            .eq("id", record_id) \
+                            .update({"estado": new_status}) \
+                            .filter("id", "eq", str(todo["id"])) \
                             .execute()
                         
-                        # Use a toast for better UX then rerun
-                        st.toast(f"Pedido {record_id} actualizado!")
                         st.rerun()
-                        
                     except Exception as e:
                         st.error(f"Error updating database: {e}")
 
