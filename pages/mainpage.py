@@ -3,7 +3,7 @@ import pandas as pd
 from supabase import create_client
 
 if not "logged_user" in st.session_state:
-    st.switch_page("streamlit_app")
+    st.switch_page("streamlit_app.py")
     st.error("Session expired!")
 
 #-------------------------
