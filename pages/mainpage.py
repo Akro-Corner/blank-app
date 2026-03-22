@@ -51,7 +51,7 @@ todos_data = response.data
 if todos_data:
     # Quick Summary Metrics
     total_pkgs = len(todos_data)
-    # Using 'completado' as the source of truth for logic
+    # Standardizing 'completado' as the "True" state
     pending = len([t for t in todos_data if t['estado'] != 'completado'])
     
     col_a, col_b = st.columns(2)
@@ -62,7 +62,6 @@ if todos_data:
 
     # 3. The List of Packages
     for todo in todos_data:
-        # Create a visual card for each package
         with st.container(border=True):
             c1, c2, c3 = st.columns([3, 2, 1])
             
@@ -75,44 +74,34 @@ if todos_data:
                 st.write(f"{todo['email']}")
             
             with c3:
-                # Checkbox logic
-                is_checked = (todo['estado'] == 'completado')
+                # Current state in DB
+                is_currently_completed = (todo['estado'] == 'completado')
                 
+                # Checkbox UI
                 status_checkbox = st.checkbox(
                     "Completado", 
-                    value=is_checked, 
+                    value=is_currently_completed, 
                     key=f"check_{todo['id']}"
                 )
-        if status_checkbox != is_checked:
-            new_val = 'completado' if status_checkbox else 'presupuesto'
-                    
-            try:
-                # We use .eq("id", str(todo["id"])) but also make sure 
-                # the table name and column names are exactly right.
-                supabase.table("todos") \
-                    .update({"estado": new_val}) \
-                    .eq("id", str(todo["id"])) \
-                    .execute()
-                        
-                st.rerun()
-            except Exception as e:
-                # This will print the full error to your Streamlit screen
-                st.error(f"Error updating database: {e}")       
-        
-                # If the checkbox state differs from the database state
-                if status_checkbox != is_checked:
-                    # Determine new string based on checkbox
+                
+                # Trigger update only if user changed the checkbox
+                if status_checkbox != is_currently_completed:
                     new_val = 'completado' if status_checkbox else 'presupuesto'
                     
-                    # FIX: Explicitly cast todo["id"] to int to prevent the 'operator does not exist' error
                     try:
+                        # CRITICAL FIX: Ensure the ID is a string for the UUID column
+                        # Also ensured we use the exact variable name from the loop
+                        record_id = str(todo["id"])
+                        
                         supabase.table("todos") \
                             .update({"estado": new_val}) \
-                            .eq("id", str(todo["id"])) \
+                            .eq("id", record_id) \
                             .execute()
                         
-                        # Refresh the UI to show updated metrics
+                        # Use a toast for better UX then rerun
+                        st.toast(f"Pedido {record_id} actualizado!")
                         st.rerun()
+                        
                     except Exception as e:
                         st.error(f"Error updating database: {e}")
 
