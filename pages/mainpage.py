@@ -93,7 +93,7 @@ if todos_data:
                     try:
                         supabase.table("todos") \
                             .update({"estado": new_val}) \
-                            .eq("id", int(todo["id"])) \
+                            .eq("id", str(todo["id"])) \
                             .execute()
                         
                         # Refresh the UI to show updated metrics
