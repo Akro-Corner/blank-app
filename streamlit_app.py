@@ -11,7 +11,7 @@ if not "logged_user" in st.session_state():
 
 if st.button("Login"):
     if lcl_password == st.secrets("ADMIN_PASSWORD"):
-        st.session_state("logged_user") = str(lcl_username)
+        st.session_state.logged_user = str(lcl_username)
         st.switch_page("pages/mainpage.py")
     else:
         st.error("Invalid credentials")
