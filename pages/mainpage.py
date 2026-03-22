@@ -38,7 +38,7 @@ sb = init_lcl_connect()
 
 @st.cache_data(ttl=600)
 def retrieve_data():
-    response = sb.table("public.todos").select("*").execute()
+    response = sb.table("todos").select("*").execute()
     return pd.DataFrame(response.data)
 
 #-------------------------
