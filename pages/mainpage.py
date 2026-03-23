@@ -77,19 +77,5 @@ if todos_data:
             with c3:
                 # 1. Determine current state
                 is_done = (todo['estado'] == 'completado')
-                
-                # 2. Checkbox
-                check_key = f"check_{todo['id']}"
-                status_checkbox = st.checkbox("Completado", value=is_done, key=check_key)
-                
-                # 3. Update logic
-                if status_checkbox != is_done:
-                    new_val = 'completado' if status_checkbox else 'presupuesto'
-                    try:
-                        # Single-line call to avoid backslash/syntax errors
-                        supabase.table("todos").update({"estado": new_val}).eq("id", str(todo["id"])).execute()
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"DB Error: {e}")
 else:
     st.info("No hay pedidos registrados.")
