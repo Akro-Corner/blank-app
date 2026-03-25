@@ -44,7 +44,7 @@ st.set_page_config(page_title="Registro Pedidos", layout="wide")
 import streamlit as st
 
 # --- 2. Header and Stats ---
-st.logo("images/dark_small_logo_imprint.png")
+st.logo("images/dark_logo_imprint.png")  
 st.title("DataSuite - Imprint")
 st.divider()
 st.subheader("Bienvenido " + st.session_state["logged_user"])
