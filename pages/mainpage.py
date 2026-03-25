@@ -39,12 +39,15 @@ url = st.secrets["SUPABASE_URL"]
 key = st.secrets["SUPABASE_KEY"]
 supabase = create_client(url, key)
 
-st.set_page_config(page_title="Delivery Registry", layout="wide")
+st.set_page_config(page_title="Registro Pedidos", layout="wide")
 
 import streamlit as st
 
 # --- 2. Header and Stats ---
-st.title("Pedidos Actuales")
+st.title("DataSuite")
+st.divider()
+st.subheader("Bienvenido " + st.session_state["logged_user"])
+st.write("Este es el registro de todos los pedidos actuales, has de tener en cuenta que:\n**estos son todos los pedidos completados o no**,**los pedidos completados NO se eliminan**.\nNO elimines la tabla *new_table* o parecidos en SupaBase.\nHas de tener en cuenta de que si no eres un usuario autorizado y estás viendo esto \ndebo advertirte de que **toda tu actividad es marcada** y susceptible a denuncia.")
 
 # Fetch data
 response = supabase.table("todos").select("*").execute()
@@ -56,8 +59,8 @@ if todos_data:
     pending = len([t for t in todos_data if t['estado'] != 'completado'])
     
     col_a, col_b = st.columns(2)
-    col_a.metric("Total Packages", total_pkgs)
-    col_b.metric("Pending Delivery", pending, delta_color="inverse")
+    col_a.metric("Pedidos Totales:", total_pkgs)
+    col_b.metric("Pedidos Pendientes:", pending, delta_color="inverse")
     
     st.divider()
 
@@ -77,5 +80,19 @@ if todos_data:
             with c3:
                 # 1. Determine current state
                 is_done = (todo['estado'] == 'completado')
+                
+                # 2. Checkbox
+                check_key = f"check_{todo['id']}"
+                status_checkbox = st.checkbox("Completado", value=is_done, key=check_key)
+                
+                # 3. Update logic
+                if status_checkbox != is_done:
+                    new_val = 'completado' if status_checkbox else 'presupuesto'
+                    try:
+                        # Single-line call to avoid backslash/syntax errors
+                        supabase.table("todos").update({"estado": new_val}).eq("id", str(todo["id"])).execute()
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"DB Error: {e}")
 else:
     st.info("No hay pedidos registrados.")
