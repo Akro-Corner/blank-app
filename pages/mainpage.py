@@ -44,7 +44,8 @@ st.set_page_config(page_title="Registro Pedidos", layout="wide")
 import streamlit as st
 
 # --- 2. Header and Stats ---
-st.title("DataSuite")
+st.logo("images/dark_small_logo_imprint.png")
+st.title("DataSuite - Imprint")
 st.divider()
 st.subheader("Bienvenido " + st.session_state["logged_user"])
 st.write("Este es el registro de todos los pedidos actuales, has de tener en cuenta que:\n**estos son todos los pedidos completados o no**, **los pedidos completados NO se eliminan**.\nNO elimines la tabla *new_table* o parecidos en SupaBase.\nHas de tener en cuenta de que si no eres un usuario autorizado y estás viendo esto \ndebo advertirte de que **toda tu actividad es marcada** y susceptible a denuncia.")
